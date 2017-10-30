@@ -28,7 +28,7 @@
     //TODO: Update the values for $host, $user, $pwd, and $db 
     //using the values you retrieved earlier from the portal. 
     $host = "db"; 
-    $user = "root"; 
+    $user = "app"; 
     $pwd = "password"; 
     $db = "testdb"; 
     // Connect to database. 
