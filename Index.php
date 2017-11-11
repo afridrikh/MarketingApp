@@ -24,12 +24,61 @@
       <input type="submit" name="submit" value="Submit" /> 
 </form> 
 <?php 
+
+    $HF_TOKEN = getenv('HF_TOKEN');
+    $HOSTNAME = getenv('HOSTNAME');
+
+    $headr = array();
+    $headr[] = 'Content-Type: application/json';
+    $headr[] = 'Authorization: Token token='.$HF_TOKEN;
+
+    $ConjurAPIKeyRequest = curl_init();
+    curl_setopt($ConjurAPIKeyRequest,CURLOPT_URL,'https://conjur/api/host_factories/hosts?id='.$HOSTNAME);
+    curl_setopt($ConjurAPIKeyRequest,CURLOPT_CAINFO,"/var/www/html/conjur-acme.pem");
+    curl_setopt($ConjurAPIKeyRequest,CURLOPT_POST, 1);
+    curl_setopt($ConjurAPIKeyRequest,CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ConjurAPIKeyRequest,CURLOPT_HTTPHEADER, $headr);
+    $response=curl_exec($ConjurAPIKeyRequest);
+    curl_close($ConjurAPIKeyRequest);
+
+    $json = json_decode($response, true);
+    $api_key = $json['api_key'];
+
+    $ConjurSessionTokenRequest = curl_init();
+    curl_setopt($ConjurSessionTokenRequest,CURLOPT_URL,'https://conjur/api/authn/users/host%2F'.$HOSTNAME.'/authenticate');
+    curl_setopt($ConjurSessionTokenRequest,CURLOPT_CAINFO,"/var/www/html/conjur-acme.pem");
+    curl_setopt($ConjurSessionTokenRequest,CURLOPT_POST, 1);
+    curl_setopt($ConjurSessionTokenRequest,CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ConjurSessionTokenRequest,CURLOPT_POSTFIELDS, $api_key);
+    $response=curl_exec($ConjurSessionTokenRequest);
+    curl_close($ConjurSessionTokenRequest);
+
+    $SessionToken=base64_encode($response);
+
     // DB connection info 
-    //TODO: Update the values for $host, $user, $pwd, and $db 
-    //using the values you retrieved earlier from the portal. 
-    $host = "db"; 
-    $user = "app"; 
-    $pwd = "password"; 
+    //TODO: Update the values for $host, $user, $pwd, and $db
+    //using the values you retrieved earlier from the portal.
+    $host = "db";
+    $user = "app";
+
+    // ---------------------THE ONLY CHANGES IN THE CODE------------------------------------------------
+
+    $headr = array();
+    $headr[] = 'Content-Type: application/json';
+    $headr[] = 'Authorization: Token token="'.$SessionToken.'"';
+
+    $ConjurDBPasswordRequest = curl_init();
+    curl_setopt($ConjurDBPasswordRequest,CURLOPT_URL,'https://conjur/api/variables/MarketingApp%2Fdatabase_password/value');
+    curl_setopt($ConjurDBPasswordRequest,CURLOPT_CAINFO,"/var/www/html/conjur-acme.pem");
+    curl_setopt($ConjurDBPasswordRequest,CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ConjurDBPasswordRequest,CURLOPT_HTTPHEADER, $headr);
+
+    $pwd=curl_exec($ConjurDBPasswordRequest);
+
+    curl_close($ConjurDBPasswordRequest);
+
+    // ---------------------THE ONLY CHANGES IN THE CODE------------------------------------------------
+
     $db = "testdb"; 
     // Connect to database. 
     try { 
